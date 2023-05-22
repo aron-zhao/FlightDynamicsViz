@@ -5,8 +5,6 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 // TODO:
-// Label dynamic position
-// Add camera presets
 // Animate stability modes
 
 let camera, scene, renderer, loader, gui, controls, labelRenderer;
@@ -58,7 +56,8 @@ const params = {
     earth_yz_ring: false,
     psi: true,
     theta: true,
-    phi: true
+    phi: true,
+    camera: 'free'
 };
 
 const origin = new THREE.Vector3( 0, 0, 0 );
@@ -87,7 +86,9 @@ function init() {
     } );
 
     scene.background = new THREE.Color( 0xf2f2f2 );
-    camera.position.set( 100, 25, 75 );
+    if (params.camera == 'free') {
+        camera.position.set( 100, 25, 75 );
+    }
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
     labelRenderer.setSize( window.innerWidth, window.innerHeight );
@@ -150,6 +151,9 @@ function init() {
     ref_planes.add( params, 'ac_xy' ).onChange(ac_xy);
     ref_planes.add( params, 'ac_xz' ).onChange(ac_xz);
     ref_planes.add( params, 'ac_yz' ).onChange(ac_yz);
+
+    const cameraGui = gui.addFolder('Camera');
+    cameraGui.add( params, 'camera', ['free', 'front', 'back', 'top', 'bottom', 'left', 'right'] );
 
     const earthXyRing = new THREE.RingGeometry( 81, 86, 64 );
     const earthXyRingMat=  new THREE.MeshBasicMaterial({color: 0xb5b5b5, side: THREE.DoubleSide})
@@ -353,6 +357,27 @@ function init() {
 }
 
 function render() {
+    switch(params.camera) {
+        case 'front':
+            camera.position.set(0, 0, -100);
+            break;
+        case 'back':
+            camera.position.set(0, 0, 100);
+            break;
+        case 'top':
+            camera.position.set(0, 100, 0);
+            break;
+        case 'bottom':
+            camera.position.set(0, -100, 0);
+            break;
+        case 'left':
+            camera.position.set(-100, 0, 0);
+            break;
+        case 'right':
+            camera.position.set(100, 0, 0);
+            break;
+    }
+
     updateAngles();
 
     earth_xy.visible = params.earth_xy;
