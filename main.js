@@ -6,7 +6,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 
 // TODO:
 // Create improved labels with dynamic position
-// Remove memory leak
+// Angle label visibility toggle
 // Add camera presets
 // Animate stability modes
 
@@ -25,9 +25,9 @@ let earthXyRingMesh, earthXzRingMesh, earthYzRingMesh;
 let psiAngle, thetaAngle, phiAngle;
 let psi, theta, phi;
 let psiLabel, thetaLabel, phiLabel;
+let psiLabel2, thetaLabel2, phiLabel2;
 let psiAngle2, thetaAngle2, phiAngle2;
 let psi2, theta2, phi2;
-let psiLabelDiv, thetaLabelDiv, phiLabelDiv;
 
 const params = {
     pitch: 20,
@@ -87,7 +87,7 @@ function init() {
         console.error( error );
     } );
 
-    scene.background = new THREE.Color( 0x7a7a7a );
+    scene.background = new THREE.Color( 0xf2f2f2 );
     camera.position.set( 100, 25, 75 );
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
@@ -177,28 +177,13 @@ function init() {
     scene.add(y0);
     scene.add(z0);
 
-    const x0LabelDiv = document.createElement( 'div' );
-    x0LabelDiv.className = 'label';
-    x0LabelDiv.textContent = 'x_0';
-    x0LabelDiv.style.backgroundColor = 'transparent';
-    x0Label = new CSS2DObject( x0LabelDiv );
-    x0Label.position.set( 0, 0, -80 );
+    x0Label = createLabel('x', new THREE.Vector3(0,0,-77), '0');
     scene.add(x0Label);
 
-    const y0LabelDiv = document.createElement( 'div' );
-    y0LabelDiv.className = 'label';
-    y0LabelDiv.textContent = 'y_0';
-    y0LabelDiv.style.backgroundColor = 'transparent';
-    y0Label = new CSS2DObject( y0LabelDiv );
-    y0Label.position.set( 80, 0, 0 );
+    y0Label = createLabel('y', new THREE.Vector3(77,0,0), '0')
     scene.add(y0Label);
 
-    const z0LabelDiv = document.createElement( 'div' );
-    z0LabelDiv.className = 'label';
-    z0LabelDiv.textContent = 'z_0';
-    z0LabelDiv.style.backgroundColor = 'transparent';
-    z0Label = new CSS2DObject( z0LabelDiv );
-    z0Label.position.set( 0, -80, 0 );
+    z0Label = createLabel('z', new THREE.Vector3(0,-77,0), '0');
     scene.add(z0Label);
  
     const xbLineGeom = new THREE.CylinderGeometry(0.5, 0.4, 80, 8);
@@ -212,12 +197,7 @@ function init() {
     xbArrowMesh.rotation.x = Math.PI/2;
     xbArrowMesh.rotation.z = Math.PI;
     xbArrowMesh.position.z = -80;
-    const xbLabelDiv = document.createElement( 'div' );
-    xbLabelDiv.className = 'label';
-    xbLabelDiv.textContent = 'x_b';
-    xbLabelDiv.style.backgroundColor = 'transparent';
-    xbLabel = new CSS2DObject( xbLabelDiv );
-    xbLabel.position.set( 0, 0, -80 );
+    xbLabel = createLabel('x', new THREE.Vector3(0,0,-80),'b');
     xb = new THREE.Object3D();
     xb.add(xbArrowMesh);
     xb.add(xbLineMesh);
@@ -233,12 +213,7 @@ function init() {
     ybLineMesh.position.x = 40;
     ybArrowMesh.rotation.z = 3*Math.PI/2;
     ybArrowMesh.position.x = 80;
-    const ybLabelDiv = document.createElement( 'div' );
-    ybLabelDiv.className = 'label';
-    ybLabelDiv.textContent = 'y_b';
-    ybLabelDiv.style.backgroundColor = 'transparent';
-    ybLabel = new CSS2DObject( ybLabelDiv );
-    ybLabel.position.set( 80, 0, 0 );
+    ybLabel = createLabel('y', new THREE.Vector3(80,0,0), 'b');
     yb = new THREE.Object3D();
     yb.add(ybArrowMesh);
     yb.add(ybLineMesh);
@@ -254,12 +229,7 @@ function init() {
     zbLineMesh.position.y = -40;
     zbArrowMesh.rotation.x = Math.PI;
     zbArrowMesh.position.y = -80;
-    const zbLabelDiv = document.createElement( 'div' );
-    zbLabelDiv.className = 'label';
-    zbLabelDiv.textContent = 'z_b';
-    zbLabelDiv.style.backgroundColor = 'transparent';
-    zbLabel = new CSS2DObject( zbLabelDiv );
-    zbLabel.position.set( 0, -80, 0 );
+    zbLabel = createLabel('z', new THREE.Vector3(0,-80,0), 'b');
     zb = new THREE.Object3D();
     zb.add(zbArrowMesh);
     zb.add(zbLabel);
@@ -277,12 +247,7 @@ function init() {
     xiArrowMesh.rotation.x = Math.PI/2;
     xiArrowMesh.rotation.z = Math.PI;
     xiArrowMesh.position.z = -80;
-    const xiLabelDiv = document.createElement( 'div' );
-    xiLabelDiv.className = 'label';
-    xiLabelDiv.textContent = 'x_i';
-    xiLabelDiv.style.backgroundColor = 'transparent';
-    xiLabel = new CSS2DObject( xiLabelDiv );
-    xiLabel.position.set( 0, 0, -80 );
+    xiLabel = createLabel('x', new THREE.Vector3(0,0,-83), 'i');
     xi = new THREE.Object3D();
     xi.add(xiArrowMesh);
     xi.add(xiLabel);
@@ -298,12 +263,7 @@ function init() {
     yiLineMesh.position.x = 40;
     yiArrowMesh.rotation.z = 3*Math.PI/2;
     yiArrowMesh.position.x = 80;
-    const yiLabelDiv = document.createElement( 'div' );
-    yiLabelDiv.className = 'label';
-    yiLabelDiv.textContent = 'y_i';
-    yiLabelDiv.style.backgroundColor = 'transparent';
-    yiLabel = new CSS2DObject( yiLabelDiv );
-    yiLabel.position.set( 80, 0, 0 );
+    yiLabel = createLabel('y', new THREE.Vector3(83,0,0), 'i');
     yi = new THREE.Object3D();
     yi.add(yiArrowMesh);
     yi.add(yiLabel);
@@ -319,12 +279,7 @@ function init() {
     ziLineMesh.position.y = -40;
     ziArrowMesh.rotation.x = Math.PI;
     ziArrowMesh.position.y = -80;
-    const ziLabelDiv = document.createElement( 'div' );
-    ziLabelDiv.className = 'label';
-    ziLabelDiv.textContent = 'z_i';
-    ziLabelDiv.style.backgroundColor = 'transparent';
-    ziLabel = new CSS2DObject( ziLabelDiv );
-    ziLabel.position.set( 0, -80, 0 );
+    ziLabel = createLabel('z', new THREE.Vector3(0,-83,0), 'i');
     zi = new THREE.Object3D();
     zi.add(ziArrowMesh);
     zi.add(ziLabel);
@@ -359,29 +314,44 @@ function init() {
     ac_yz.rotation.x = Math.PI / 2;
     zb.add(ac_yz);
 
-    psiLabelDiv = document.createElement( 'div' );
-    psiLabelDiv.className = 'label';
-    psiLabelDiv.textContent = 'psi';
-    psiLabelDiv.style.backgroundColor = 'transparent';
-    psiLabel = new CSS2DObject( psiLabelDiv );
-    psiLabel.position.set( -15, 0, -77 );
+    psiLabel = createLabel('ψ', new THREE.Vector3(-15,0,-77));
     scene.add(psiLabel);
 
-    thetaLabelDiv = document.createElement( 'div' );
-    thetaLabelDiv.className = 'label';
-    thetaLabelDiv.textContent = 'theta';
-    thetaLabelDiv.style.backgroundColor = 'transparent';
-    thetaLabel = new CSS2DObject( thetaLabelDiv );
-    thetaLabel.position.set( -28, 15, -75 );
+    thetaLabel = createLabel('θ', new THREE.Vector3(-28,15,-75));
     scene.add(thetaLabel);
 
-    phiLabelDiv = document.createElement( 'div' );
-    phiLabelDiv.className = 'label';
-    phiLabelDiv.textContent = 'phi';
-    phiLabelDiv.style.backgroundColor = 'transparent';
-    phiLabel = new CSS2DObject( phiLabelDiv );
-    phiLabel.position.set( 73, -12, -32 );
+    phiLabel = createLabel('φ', new THREE.Vector3(73,-12,-32));
     scene.add(phiLabel);
+
+    psiLabel2 = createLabel('ψ', new THREE.Vector3(-15,0,-77));
+    scene.add(psiLabel2);
+
+    thetaLabel2 = createLabel('θ', new THREE.Vector3(-28,15,-75));
+    scene.add(thetaLabel2);
+
+    phiLabel2 = createLabel('φ', new THREE.Vector3(73,-12,-32));
+    scene.add(phiLabel2);
+
+    thetaAngle = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.pitch*Math.PI/180 );
+    theta = new THREE.Mesh(thetaAngle, thetaMat);
+    thetaAngle2 = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.pitch*Math.PI/180 );
+    theta2 = new THREE.Mesh(thetaAngle2, thetaMat);
+    scene.add(theta);
+    scene.add(theta2);
+
+    psiAngle = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.yaw*Math.PI/180 );
+    psiAngle2 = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.yaw*Math.PI/180 );
+    psi = new THREE.Mesh(psiAngle, psiMat);
+    psi2 = new THREE.Mesh(psiAngle2, psiMat);
+    scene.add(psi);
+    scene.add(psi2);
+
+    phiAngle = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.roll*Math.PI/180 );
+    phiAngle2 = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.roll*Math.PI/180 );
+    phi = new THREE.Mesh(phiAngle, phiMat);
+    phi2 = new THREE.Mesh(phiAngle2, phiMat);
+    scene.add(phi);
+    scene.add(phi2);
 }
 
 function render() {
@@ -472,39 +442,36 @@ function animate() {
 }
 
 function updateAngles() {
-    psiLabelDiv.textContent = 'psi ' + (params.yaw).toString();
-    scene.remove(psi);
-    scene.remove(psi2);
+    // UPDATE ANGLE LABEL LOCATIONS
+
+
+
+    psi.geometry.dispose();
+    psi2.geometry.dispose();
     psiAngle = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.yaw*Math.PI/180 );
-    psiAngle2 = new THREE.RingGeometry( 77, 79, 64, 1, 0, params.yaw*Math.PI/180 );
-    psi = new THREE.Mesh(psiAngle, psiMat);
-    psi2 = new THREE.Mesh(psiAngle2, psiMat);
+    psiAngle2 = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.yaw*Math.PI/180 );
+    psi.geometry = psiAngle;
+    psi2.geometry = psiAngle2;
     psi.rotation.x = -1*Math.PI/2;
     psi.rotation.z = Math.PI/2;
     psi2.rotation.x = -1*Math.PI/2;
-    scene.add(psi);
-    scene.add(psi2);
 
-    thetaLabelDiv.textContent = 'theta ' + (params.pitch).toString();
-    scene.remove(theta);
-    scene.remove(theta2);
+    theta.geometry.dispose();
+    theta2.geometry.dispose();
     thetaAngle = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.pitch*Math.PI/180 );
-    thetaAngle2 = new THREE.RingGeometry( 77, 79, 64, 1, 0, params.pitch*Math.PI/180 );
-    theta = new THREE.Mesh(thetaAngle, thetaMat);
-    theta2 = new THREE.Mesh(thetaAngle2, thetaMat);
+    thetaAngle2 = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.pitch*Math.PI/180 );
+    theta.geometry = thetaAngle;
+    theta2.geometry = thetaAngle2;
     theta.rotation.y = Math.PI/2 + params.yaw*Math.PI/180;
     theta2.rotation.z = -1*Math.PI/2;
     theta2.rotation.y = Math.PI/2 + params.yaw*Math.PI/180;
-    scene.add(theta);
-    scene.add(theta2);
 
-    phiLabelDiv.textContent = 'phi ' + (params.roll).toString();
-    scene.remove(phi);
-    scene.remove(phi2);
+    phi.geometry.dispose();
+    phi2.geometry.dispose();
     phiAngle = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.roll*Math.PI/180 );
-    phiAngle2 = new THREE.RingGeometry( 77, 79, 64, 1, 0, params.roll*Math.PI/180 );
-    phi = new THREE.Mesh(phiAngle, phiMat);
-    phi2 = new THREE.Mesh(phiAngle2, phiMat);
+    phiAngle2 = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.roll*Math.PI/180 );
+    phi.geometry = phiAngle;
+    phi2.geometry = phiAngle2;
     phi.rotation.order = 'YXZ';
     phi.rotation.y = params.yaw*Math.PI/180;
     phi.rotation.x = -1*Math.PI + params.pitch*Math.PI/180;
@@ -512,9 +479,29 @@ function updateAngles() {
     phi2.rotation.z = -1*Math.PI/2 - params.roll*Math.PI/180;
     phi2.rotation.y = params.yaw*Math.PI/180;
     phi2.rotation.x = params.pitch*Math.PI/180;
-    scene.add(phi);
-    scene.add(phi2);
 }
+
+function createLabel(content, position, subscript) {
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'label';
+
+    const labelContent = document.createElement('span');
+    labelContent.innerHTML = content;
+
+    if (subscript) {
+      const subscriptSpan = document.createElement('sub');
+      subscriptSpan.className = 'subscript';
+      subscriptSpan.innerHTML = subscript;
+      labelContent.appendChild(subscriptSpan);
+    }
+
+    labelDiv.appendChild(labelContent);
+
+    const labelObject = new CSS2DObject(labelDiv); 
+    labelObject.position.copy(position);
+
+    return labelObject;
+  }
 
 init()
 animate()
