@@ -2,13 +2,30 @@
 <html>
 	<head lang="en">
 		<meta charset="utf-8">
-		<title>Aircraft Dynamics Visualizer</title>
+		<title>Aircraft Attitude Visualizer</title>
 		<style>
 			body { margin: 0; }
+			#info {
+				position: absolute;
+				top: 0px;
+				width: 100%;
+				padding: 10px;
+				text-align: center; }
+			#info2 {
+				position: absolute;
+				font-size: 12px;
+				bottom: 0%;
+				width: 100%;
+				padding: 10px;
+				text-align: center; }
 		</style>
 	</head>
 	<body>
 		<script type="module" src="/main.js"></script>
+		<div id="info"><h2>Aircraft Attitude Visualizer</h2></div>
+		<div id="info2">Developed to assist with visualizing aircraft attitude for MAE 4070 Flight Dynamics by Aron Zhao '23 <br>
+			Aircraft model provided by Flightgear developers, used without modification under the GPLv2 License <br>
+			Source code: <a href="https://github.com/aron-zhao/FlightDynamicsViz">https://github.com/aron-zhao/FlightDynamicsViz</a></div>
 	</body>
 	<style>
 		.label {

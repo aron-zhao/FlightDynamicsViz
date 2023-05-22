@@ -5,8 +5,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 // TODO:
-// Create improved labels with dynamic position
-// Angle label visibility toggle
+// Label dynamic position
 // Add camera presets
 // Animate stability modes
 
@@ -25,9 +24,9 @@ let earthXyRingMesh, earthXzRingMesh, earthYzRingMesh;
 let psiAngle, thetaAngle, phiAngle;
 let psi, theta, phi;
 let psiLabel, thetaLabel, phiLabel;
-let psiLabel2, thetaLabel2, phiLabel2;
 let psiAngle2, thetaAngle2, phiAngle2;
 let psi2, theta2, phi2;
+let psiOrigin, thetaOrigin, phiOrigin;
 
 const params = {
     pitch: 20,
@@ -177,13 +176,13 @@ function init() {
     scene.add(y0);
     scene.add(z0);
 
-    x0Label = createLabel('x', new THREE.Vector3(0,0,-77), '0');
+    x0Label = createLabel('x', new THREE.Vector3(0,0,-76), '0');
     scene.add(x0Label);
 
-    y0Label = createLabel('y', new THREE.Vector3(77,0,0), '0')
+    y0Label = createLabel('y', new THREE.Vector3(76,0,0), '0')
     scene.add(y0Label);
 
-    z0Label = createLabel('z', new THREE.Vector3(0,-77,0), '0');
+    z0Label = createLabel('z', new THREE.Vector3(0,-76,0), '0');
     scene.add(z0Label);
  
     const xbLineGeom = new THREE.CylinderGeometry(0.5, 0.4, 80, 8);
@@ -247,7 +246,7 @@ function init() {
     xiArrowMesh.rotation.x = Math.PI/2;
     xiArrowMesh.rotation.z = Math.PI;
     xiArrowMesh.position.z = -80;
-    xiLabel = createLabel('x', new THREE.Vector3(0,0,-83), 'i');
+    xiLabel = createLabel('x', new THREE.Vector3(0,0,-78), 'i');
     xi = new THREE.Object3D();
     xi.add(xiArrowMesh);
     xi.add(xiLabel);
@@ -263,7 +262,7 @@ function init() {
     yiLineMesh.position.x = 40;
     yiArrowMesh.rotation.z = 3*Math.PI/2;
     yiArrowMesh.position.x = 80;
-    yiLabel = createLabel('y', new THREE.Vector3(83,0,0), 'i');
+    yiLabel = createLabel('y', new THREE.Vector3(78,0,0), 'i');
     yi = new THREE.Object3D();
     yi.add(yiArrowMesh);
     yi.add(yiLabel);
@@ -279,7 +278,7 @@ function init() {
     ziLineMesh.position.y = -40;
     ziArrowMesh.rotation.x = Math.PI;
     ziArrowMesh.position.y = -80;
-    ziLabel = createLabel('z', new THREE.Vector3(0,-83,0), 'i');
+    ziLabel = createLabel('z', new THREE.Vector3(0,-78,0), 'i');
     zi = new THREE.Object3D();
     zi.add(ziArrowMesh);
     zi.add(ziLabel);
@@ -314,23 +313,21 @@ function init() {
     ac_yz.rotation.x = Math.PI / 2;
     zb.add(ac_yz);
 
-    psiLabel = createLabel('ψ', new THREE.Vector3(-15,0,-77));
-    scene.add(psiLabel);
+    phiOrigin = new THREE.Object3D();
+    phiLabel = createLabel('φ', new THREE.Vector3(76, 0, 0));
+    phiOrigin.add(phiLabel);
+    scene.add(phiOrigin);
 
-    thetaLabel = createLabel('θ', new THREE.Vector3(-28,15,-75));
-    scene.add(thetaLabel);
+    thetaOrigin = new THREE.Object3D();
+    thetaLabel = createLabel('θ', new THREE.Vector3(0, 0, 76));
+    thetaOrigin.add(thetaLabel);
+    scene.add(thetaOrigin);
 
-    phiLabel = createLabel('φ', new THREE.Vector3(73,-12,-32));
-    scene.add(phiLabel);
+    psiOrigin = new THREE.Object3D();
+    psiLabel = createLabel('ψ', new THREE.Vector3(0, 0, 76));
+    psiOrigin.add(psiLabel);
+    scene.add(psiOrigin);
 
-    psiLabel2 = createLabel('ψ', new THREE.Vector3(-15,0,-77));
-    scene.add(psiLabel2);
-
-    thetaLabel2 = createLabel('θ', new THREE.Vector3(-28,15,-75));
-    scene.add(thetaLabel2);
-
-    phiLabel2 = createLabel('φ', new THREE.Vector3(73,-12,-32));
-    scene.add(phiLabel2);
 
     thetaAngle = new THREE.RingGeometry( 74, 79, 64, 1, 0, params.pitch*Math.PI/180 );
     theta = new THREE.Mesh(thetaAngle, thetaMat);
@@ -352,6 +349,7 @@ function init() {
     phi2 = new THREE.Mesh(phiAngle2, phiMat);
     scene.add(phi);
     scene.add(phi2);
+
 }
 
 function render() {
@@ -442,9 +440,33 @@ function animate() {
 }
 
 function updateAngles() {
-    // UPDATE ANGLE LABEL LOCATIONS
+    if (Math.abs(params.yaw) < 5 && params.yaw < 0) {
+        psiLabel.position.set(2, 0, -76);
+    } else if (Math.abs(params.yaw) < 5 && params.yaw >= 0) {
+        psiLabel.position.set(-2, 0, -76);
+    } else {
+        psiLabel.position.set((params.yaw*-0.66), 0, -76+((Math.abs(params.yaw)**2)*0.003));
+    }
 
+    if ((Math.abs(params.pitch) < 5) && (params.pitch < 0)) {
+        thetaLabel.position.set(params.yaw*-1.15, -2, -76+((Math.abs(params.pitch)**2)*0.003)+((Math.abs(params.yaw)**2)*0.011));
+    } else if (Math.abs(params.pitch) < 5 && params.pitch >= 0) {
+        thetaLabel.position.set(params.yaw*-1.15, 2, -76+((Math.abs(params.pitch)**2)*0.003)+((Math.abs(params.yaw)**2)*0.011));
+    } else {
+        thetaLabel.position.set(params.yaw*-1.15, params.pitch*0.68, -76+((Math.abs(params.pitch)**2)*0.003)+((Math.abs(params.yaw)**2)*0.011));
+    }
 
+    phiOrigin.rotation.order = 'YXZ';
+    phiOrigin.rotation.x = params.pitch*(Math.PI/180);
+    phiOrigin.rotation.z = params.roll*(-1*Math.PI/180)/2;
+    phiOrigin.rotation.y = params.yaw*(Math.PI/180);
+
+    psiOrigin.rotation.order = 'YXZ';
+    phiOrigin.rotation.y = params.yaw*(Math.PI/180);
+
+    thetaOrigin.rotation.order = 'YXZ';
+    phiOrigin.rotation.x = params.pitch*(Math.PI/180);
+    phiOrigin.rotation.y = params.yaw*(Math.PI/180);
 
     psi.geometry.dispose();
     psi2.geometry.dispose();
