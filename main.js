@@ -7,7 +7,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 // Author: Aron Zhao, aron.c.zhao@gmail.com
 // Aircraft model from Fightgear developers, used without modification under GPLv2 license
 // https://github.com/aron-zhao/FlightDynamicsViz
-// (Please forgive any inefficiences and poor coding practice - this was built on a short timeline with no prior three.js experience)
+// (Please pardon any inefficiences and poor coding practice - this was built on a short timeline with no prior three.js experience)
 
 let camera, scene, renderer, loader, gui, controls, labelRenderer;
 let earth_xy, earth_xz, earth_yz;
@@ -29,6 +29,7 @@ let psi2, theta2, phi2;
 let psiOrigin, thetaOrigin, phiOrigin;
 let particles, particlesParent;
 let clock, elapsedTime;
+let psiNeg, thetaNeg, phiNeg;
 
 const params = {
     pitch: 20,
@@ -81,6 +82,8 @@ function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000 );
     renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
     labelRenderer = new CSS2DRenderer();
     gui = new GUI();
     clock = new THREE.Clock();
@@ -334,16 +337,22 @@ function init() {
 
     phiOrigin = new THREE.Object3D();
     phiLabel = createLabel('φ', new THREE.Vector3(76, 0, 0));
+    phiNeg = createLabel('(-)', new THREE.Vector3(76, 4, 0));
+    phiOrigin.add(phiNeg);
     phiOrigin.add(phiLabel);
     scene.add(phiOrigin);
 
     thetaOrigin = new THREE.Object3D();
-    thetaLabel = createLabel('θ', new THREE.Vector3(0, 0, 76));
+    thetaLabel = createLabel(' θ', new THREE.Vector3(0, 0, 76));
+    thetaNeg = createLabel('(-)', new THREE.Vector3(0, 4, 76));
+    thetaOrigin.add(thetaNeg);
     thetaOrigin.add(thetaLabel);
     scene.add(thetaOrigin);
 
     psiOrigin = new THREE.Object3D();
-    psiLabel = createLabel('ψ', new THREE.Vector3(0, 0, 76));
+    psiLabel = createLabel(' ψ', new THREE.Vector3(0, 0, 76));
+    psiNeg = createLabel('(-)', new THREE.Vector3(0, 4, 76));
+    psiOrigin.add(psiNeg);
     psiOrigin.add(psiLabel);
     scene.add(psiOrigin);
 
@@ -413,6 +422,22 @@ function render() {
             break;
     }
 
+    if (params.yaw < -3 && params.psi) {
+        psiNeg.visible = true;
+    } else {
+        psiNeg.visible = false;
+    }
+    if (params.pitch < -3 && params.theta) {
+        thetaNeg.visible = true;
+    } else {
+        thetaNeg.visible = false;
+    }
+    if (params.roll < -3 && params.phi) {
+        phiNeg.visible = true;
+    } else {
+        phiNeg.visible = false;
+    }
+
     updateAngles();
 
     earth_xy.visible = params.earth_xy;
@@ -423,18 +448,41 @@ function render() {
     ac_xz.visible = params.ac_xz;
     ac_yz.visible = params.ac_yz;
 
+    if (Math.abs(params.yaw) < 3 && Math.abs(params.pitch < 3)) {
+        x0Label.visible = false;
+    } else {
+        x0Label.visible = params.x_0;
+    }
     x0.visible = params.x_0;
-    x0Label.visible = params.x_0;
+    if (Math.abs(params.yaw) < 3 && Math.abs(params.roll < 3)) {
+        y0Label.visible = false;
+    } else {
+        y0Label.visible = params.y_0;
+    }
     y0.visible = params.y_0;
-    y0Label.visible = params.y_0;
+    if (Math.abs(params.pitch) < 3 && Math.abs(params.roll < 3)) {
+        z0Label.visible = false;
+    } else {
+        z0Label.visible = params.z_0;
+    }
     z0.visible = params.z_0;
-    z0Label.visible = params.z_0;
-    xi.visible = params.x_i;
-    xiLabel.visible = params.x_i;
+    if (Math.abs(params.yaw) < 3 || Math.abs(params.pitch) < 3) {
+        xiLabel.visible = false;
+    } else {
+        xiLabel.visible = params.x_i;
+    }
     yi.visible = params.y_i;
-    yiLabel.visible = params.y_i;
+    if (Math.abs(params.yaw) < 3 || Math.abs(params.roll) < 3) {
+        yiLabel.visible = false;
+    } else {
+        yiLabel.visible = params.y_i;
+    }
     zi.visible = params.z_i;
-    ziLabel.visible = params.z_i;
+    if (Math.abs(params.pitch) < 3 || Math.abs(params.roll) < 3) {
+        ziLabel.visible = false;
+    } else {
+        ziLabel.visible = params.z_i;
+    }
     xb.visible = params.x_b;
     xbLabel.visible = params.x_b;
     yb.visible = params.y_b;
@@ -444,13 +492,25 @@ function render() {
 
     psi.visible = params.psi;
     psi2.visible = params.psi;
-    psiLabel.visible = params.psi;
+    if (Math.abs(params.yaw) < 3) {
+        psiLabel.visible = false;
+    } else {
+        psiLabel.visible = params.psi;
+    }
     theta.visible = params.theta;
     theta2.visible = params.theta;
-    thetaLabel.visible = params.theta;
+    if (Math.abs(params.pitch) < 3) {
+        thetaLabel.visible = false;
+    } else {
+        thetaLabel.visible = params.theta;
+    }
     phi.visible = params.phi;
     phi2.visible = params.phi2;
-    phiLabel.visible = params.phi;
+    if (Math.abs(params.roll) < 3) {
+        phiLabel.visible = false;
+    } else {
+        phiLabel.visible = params.phi;
+    }
 
     acXyRingMesh.visible = params.ac_xy_ring;
     acXzRingMesh.visible = params.ac_xz_ring;
@@ -534,7 +594,7 @@ function rollAnim(x) {
     } else {
         params.roll = 15*Math.log(elapsedTime-1);
     }
-    if (elapsedTime > 5) {
+    if (elapsedTime > 8) {
         clock.start();
     }
 }
@@ -550,9 +610,11 @@ function spiralAnim(x) {
     elapsedTime = clock.getElapsedTime();
     x.position.z += 2;
 
-    params.roll = 5*elapsedTime*(1.2**elapsedTime);
+    if (elapsedTime > 2) {
+        params.roll = 5*(elapsedTime-2)*(1.2**(elapsedTime - 2));
+    }
 
-    if (elapsedTime > 5) {
+    if (elapsedTime > 8) {
         clock.start();
     }
 }
