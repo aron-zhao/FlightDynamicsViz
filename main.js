@@ -4,8 +4,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-// TODO:
-// Animate stability modes
+// Author: Aron Zhao, aron.c.zhao@gmail.com
+// Aircraft model from Fightgear developers, used without modification under GPLv2 license
+// https://github.com/aron-zhao/FlightDynamicsViz
+// (Please forgive any inefficiences and poor coding practice - this was built on a short timeline with no prior three.js experience)
 
 let camera, scene, renderer, loader, gui, controls, labelRenderer;
 let earth_xy, earth_xz, earth_yz;
@@ -25,6 +27,8 @@ let psiLabel, thetaLabel, phiLabel;
 let psiAngle2, thetaAngle2, phiAngle2;
 let psi2, theta2, phi2;
 let psiOrigin, thetaOrigin, phiOrigin;
+let particles, particlesParent;
+let clock, elapsedTime;
 
 const params = {
     pitch: 20,
@@ -57,7 +61,9 @@ const params = {
     psi: true,
     theta: true,
     phi: true,
-    camera: 'free'
+    camera: 'free',
+    anim: 'none',
+    airflow: false
 };
 
 const origin = new THREE.Vector3( 0, 0, 0 );
@@ -77,6 +83,7 @@ function init() {
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     labelRenderer = new CSS2DRenderer();
     gui = new GUI();
+    clock = new THREE.Clock();
 
     loader.load( './b744.gltf', function ( gltf ) {
         aircraft = gltf.scene;
@@ -85,7 +92,7 @@ function init() {
         console.error( error );
     } );
 
-    scene.background = new THREE.Color( 0xf2f2f2 );
+    scene.background = new THREE.Color( 0xffffff );
     if (params.camera == 'free') {
         camera.position.set( 100, 25, 75 );
     }
@@ -95,6 +102,7 @@ function init() {
     labelRenderer.domElement.style.position = 'absolute';
     labelRenderer.domElement.style.top = '0px';
     document.body.appendChild( labelRenderer.domElement );
+    clock.start()
 
     const ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.5 );
     scene.add( ambientLight );
@@ -119,6 +127,15 @@ function init() {
     attitude.add( params, 'pitch' , -45, 45, 1 );
     attitude.add( params, 'roll', -45, 45, 1 );
     attitude.add( params, 'yaw', -45, 45, 1 );
+
+    const cameraGui = gui.addFolder('Camera');
+    cameraGui.add( params, 'camera', ['free', 'front', 'back', 'top', 'bottom', 'left', 'right'] );
+
+    const animGui = gui.addFolder('Animation');
+    animGui.add( params, 'anim', ['none', 'phugoid', 'short period', 'spiral', 'roll', 'dutch roll'] );
+
+    const envGui = gui.addFolder('Environment');
+    envGui.add( params, 'airflow' ).onChange();
 
     const vectors = gui.addFolder('Vectors');
     vectors.add( params, 'x_0' ).onChange(x0);
@@ -152,8 +169,6 @@ function init() {
     ref_planes.add( params, 'ac_xz' ).onChange(ac_xz);
     ref_planes.add( params, 'ac_yz' ).onChange(ac_yz);
 
-    const cameraGui = gui.addFolder('Camera');
-    cameraGui.add( params, 'camera', ['free', 'front', 'back', 'top', 'bottom', 'left', 'right'] );
 
     const earthXyRing = new THREE.RingGeometry( 81, 86, 64 );
     const earthXyRingMat=  new THREE.MeshBasicMaterial({color: 0xb5b5b5, side: THREE.DoubleSide})
@@ -354,27 +369,47 @@ function init() {
     scene.add(phi);
     scene.add(phi2);
 
+    const particleMat = new THREE.MeshBasicMaterial({color: 0xd1d1d1});
+    const particleGeo = new THREE.CylinderGeometry(0.1, 0.1, 40, 4);
+
+    var i = 0;
+    var j = 0;
+    particles = [];
+    particlesParent = new THREE.Object3D;
+    while(i < 10) {
+        while(j < 10) {
+            const particle = new THREE.Mesh(particleGeo, particleMat);
+            particle.rotation.x = Math.PI/2;
+            particle.position.set(-50 + i*10, -75 + j*15, -300 + Math.random()*180)
+            particlesParent.add(particle);
+            particles[i*10 + j] = particle;
+            scene.add(particle);
+            j += 1;
+        }
+        j = 0;
+        i += 1;
+    }
 }
 
 function render() {
     switch(params.camera) {
         case 'front':
-            camera.position.set(0, 0, -100);
+            camera.position.set(0, 0, -120);
             break;
         case 'back':
-            camera.position.set(0, 0, 100);
+            camera.position.set(0, 0, 120);
             break;
         case 'top':
-            camera.position.set(0, 100, 0);
+            camera.position.set(0, 120, 0);
             break;
         case 'bottom':
-            camera.position.set(0, -100, 0);
+            camera.position.set(0, -120, 0);
             break;
         case 'left':
-            camera.position.set(-100, 0, 0);
+            camera.position.set(-120, 0, 0);
             break;
         case 'right':
-            camera.position.set(100, 0, 0);
+            camera.position.set(120, 0, 0);
             break;
     }
 
@@ -458,40 +493,147 @@ function render() {
     labelRenderer.render( scene, camera );
 }
 
+function simulate() {
+    particles.forEach(airflowViz);
+
+    switch(params.anim) {
+        case 'none':
+            particles.forEach(noneAnim);
+            break
+        case 'phugoid':
+            particles.forEach(phugoidAnim);
+            break
+        case 'short period':
+            particles.forEach(shortPeriodAnim);
+            break
+        case 'roll':
+            particles.forEach(rollAnim);
+            break
+        case 'spiral':
+            particles.forEach(spiralAnim);
+            break
+        case 'dutch roll':
+            particles.forEach(dutchRollAnim);
+            break
+    }
+}
+
+function rollAnim(x) {
+    if (x.position.z >= 120) {
+        x.position.z = -300 + Math.random()*180
+    }
+    params.pitch = 0;
+    params.roll = 0;
+    params.yaw = 0;
+
+    elapsedTime = clock.getElapsedTime();
+    x.position.z += 2;
+
+    if (elapsedTime < 2) {
+        params.roll = 0;
+    } else {
+        params.roll = 15*Math.log(elapsedTime-1);
+    }
+    if (elapsedTime > 5) {
+        clock.start();
+    }
+}
+
+function spiralAnim(x) {
+    if (x.position.z >= 120) {
+        x.position.z = -300 + Math.random()*180
+    }
+    params.pitch = 0;
+    params.roll = 0;
+    params.yaw = 0;
+
+    elapsedTime = clock.getElapsedTime();
+    x.position.z += 2;
+
+    params.roll = 5*elapsedTime*(1.2**elapsedTime);
+
+    if (elapsedTime > 5) {
+        clock.start();
+    }
+}
+
+function dutchRollAnim(x) {
+    if (x.position.z >= 120) {
+        x.position.z = -300 + Math.random()*180
+    }
+    params.pitch = 0;
+    params.roll = 0;
+    params.yaw = 0;
+
+    elapsedTime = clock.getElapsedTime();
+    x.position.z += 2;
+
+    params.roll = 15*Math.sin(0.5*elapsedTime);
+    params.yaw = 15*Math.sin(0.5*(elapsedTime - Math.PI/2));
+}
+
+function shortPeriodAnim(x) {
+    if (x.position.z >= 120) {
+        x.position.z = -300 + Math.random()*180
+    }
+    params.pitch = 0;
+    params.roll = 0;
+    params.yaw = 0;
+
+    elapsedTime = clock.getElapsedTime();
+    x.position.z += 2;
+    params.pitch += 35*Math.sin(1.5*elapsedTime)*(0.4**elapsedTime)
+
+    if (elapsedTime > 5) {
+        clock.start();
+    }
+}
+
+function phugoidAnim(x) {
+    if (x.position.z >= 120) {
+        x.position.z = -300 + Math.random()*180
+    }
+
+    params.pitch = 0;
+    params.roll = 0;
+    params.yaw = 0;
+
+    elapsedTime = clock.getElapsedTime();
+    x.position.z += 1.5+0.8*Math.cos(0.5*elapsedTime);
+    x.position.y -= (0.3*Math.sin(0.5*elapsedTime));
+    params.pitch += 5*(Math.sin(0.5*elapsedTime))
+}
+
+function noneAnim(x) {
+    if (x.position.z >= 150) {
+        x.position.z = -300 + Math.random()*180
+    }
+    x.position.z += 2;
+}
+
+function airflowViz(x) {
+    x.visible = params.airflow;
+}
+
 function animate() {
 	requestAnimationFrame( animate );
 	controls.update();
-	render()
+    simulate();
+	render();
 }
 
 function updateAngles() {
-    if (Math.abs(params.yaw) < 5 && params.yaw < 0) {
-        psiLabel.position.set(2, 0, -76);
-    } else if (Math.abs(params.yaw) < 5 && params.yaw >= 0) {
-        psiLabel.position.set(-2, 0, -76);
-    } else {
-        psiLabel.position.set((params.yaw*-0.66), 0, -76+((Math.abs(params.yaw)**2)*0.003));
-    }
-
-    if ((Math.abs(params.pitch) < 5) && (params.pitch < 0)) {
-        thetaLabel.position.set(params.yaw*-1.15, -2, -76+((Math.abs(params.pitch)**2)*0.003)+((Math.abs(params.yaw)**2)*0.011));
-    } else if (Math.abs(params.pitch) < 5 && params.pitch >= 0) {
-        thetaLabel.position.set(params.yaw*-1.15, 2, -76+((Math.abs(params.pitch)**2)*0.003)+((Math.abs(params.yaw)**2)*0.011));
-    } else {
-        thetaLabel.position.set(params.yaw*-1.15, params.pitch*0.68, -76+((Math.abs(params.pitch)**2)*0.003)+((Math.abs(params.yaw)**2)*0.011));
-    }
-
-    phiOrigin.rotation.order = 'YXZ';
-    phiOrigin.rotation.x = params.pitch*(Math.PI/180);
-    phiOrigin.rotation.z = params.roll*(-1*Math.PI/180)/2;
-    phiOrigin.rotation.y = params.yaw*(Math.PI/180);
-
     psiOrigin.rotation.order = 'YXZ';
-    phiOrigin.rotation.y = params.yaw*(Math.PI/180);
+    psiOrigin.rotation.y = Math.PI + (params.yaw*(Math.PI/180))/2;
 
     thetaOrigin.rotation.order = 'YXZ';
-    phiOrigin.rotation.x = params.pitch*(Math.PI/180);
+    thetaOrigin.rotation.y = Math.PI + params.yaw*(Math.PI/180);
+    thetaOrigin.rotation.x = -1*params.pitch*(Math.PI/180)/2;
+
+    phiOrigin.rotation.order = 'YXZ';
     phiOrigin.rotation.y = params.yaw*(Math.PI/180);
+    phiOrigin.rotation.x = params.pitch*(Math.PI/180);
+    phiOrigin.rotation.z = params.roll*(-1*Math.PI/180)/2;
 
     psi.geometry.dispose();
     psi2.geometry.dispose();
@@ -550,5 +692,5 @@ function createLabel(content, position, subscript) {
     return labelObject;
   }
 
-init()
-animate()
+init();
+animate();
