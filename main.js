@@ -466,6 +466,7 @@ function render() {
         z0Label.visible = params.z_0;
     }
     z0.visible = params.z_0;
+    xi.visible = params.x_i;
     if (Math.abs(params.yaw) < 3 || Math.abs(params.pitch) < 3) {
         xiLabel.visible = false;
     } else {
@@ -505,7 +506,7 @@ function render() {
         thetaLabel.visible = params.theta;
     }
     phi.visible = params.phi;
-    phi2.visible = params.phi2;
+    phi2.visible = params.phi;
     if (Math.abs(params.roll) < 3) {
         phiLabel.visible = false;
     } else {
