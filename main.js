@@ -7,7 +7,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 // Author: Aron Zhao, aron.c.zhao@gmail.com
 // Aircraft model from Fightgear developers, used without modification under GPLv2 license
 // https://github.com/aron-zhao/FlightDynamicsViz
-// (Please pardon any inefficiences and poor coding practice - this was built on a short timeline with no prior three.js experience)
+// (Please forgive any inefficiences and poor coding practice - this was built on a short timeline with no prior three.js experience)
 
 let camera, scene, renderer, loader, gui, controls, labelRenderer;
 let earth_xy, earth_xz, earth_yz;
