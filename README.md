@@ -1,3 +1,5 @@
+https://aron-zhao.github.io/FlightDynamicsViz/
+
 Developed to assist with visualizing 3D aircraft attitude and orientation for Cornell University MAE 4070 Flight Dynamics.
 
 Features interactive aircraft attitude controls with dynamic vector and angle visualizations, controls to selectively show/hide components of visualization, and animations of aircraft modes of motion. Note the animations are only visual representations, and are not reflective of physically accurate aircraft behavior. 
